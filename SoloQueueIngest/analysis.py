@@ -19,3 +19,36 @@ try:
 except Exception as e:
     print(e)
     exit()
+
+db = client["league_data"]
+collection = db["solo_queue_data"]
+
+pipeline = [
+    {
+        "$match": {
+            "player_name": "C9 Fudge",
+            "data_type": "PARTICIPANT"
+        }
+    },
+    {
+        "$group": {
+            "_id": "$game_id",
+            "total_kills": {"$sum": "$data.kills"}
+        }
+    },
+    {
+        "$group": {
+            "_id": None,
+            "average_kills_per_game": {"$avg": "$total_kills"}
+        }
+    }
+]
+
+result = list(db.your_collection_name.aggregate(pipeline))
+
+if result:
+    average_kills = result[0]["average_kills_per_game"]
+else:
+    average_kills = 0  # Player not found or no data available
+
+print("Average Kills per Game for C9 Fudge:", average_kills)

@@ -1,3 +1,4 @@
 python-dotenv
 cassiopeia
 pymongo
+black
