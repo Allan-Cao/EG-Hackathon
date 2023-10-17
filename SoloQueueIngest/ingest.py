@@ -57,16 +57,24 @@ for puuid, player in players.items():
     match_history = cass.get_match_history(
         continent=PLATFORM.continent, puuid=puuid, queue=cass.Queue.ranked_solo_fives
     )
+    counter = 0
     # Iterate through matches and store in MongoDB
     for match in match_history:
+        
         game_id = PLATFORM.value + "_" + str(match.id)
         print(f"Processing {game_id}")
 
+        # Stop trying to ingest if we have found 3 in a row that have already been ingested.
+        if counter > 3:
+            break
+        
         # Check if game_id already exists
         if collection.count_documents({"game_id": game_id}) > 0:
             print(f"Game ID {game_id} already exists. Skipping.")
+            counter += 1
             continue
 
+        counter = 0
         bulk_data = []
         for participant in match.participants:
             if participant.summoner.puuid not in players.keys():
