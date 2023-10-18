@@ -2,6 +2,7 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
 import os
+import csv
 
 # Initialize env variables
 load_dotenv()
@@ -26,29 +27,55 @@ collection = db["solo_queue_data"]
 pipeline = [
     {
         "$match": {
-            "player_name": "C9 Fudge",
             "data_type": "PARTICIPANT"
         }
     },
     {
         "$group": {
-            "_id": "$game_id",
-            "total_kills": {"$sum": "$data.kills"}
+            "_id": {"player": "$player_name", "champion": "$data.championName", "position": "$data.teamPosition"},
+            "avgKills": {"$avg": "$data.stats.kills"},
+            "avgDeaths": {"$avg": "$data.stats.deaths"},
+            "avgAssists": {"$avg": "$data.stats.assists"},
+            "gamesPlayed": {"$sum": 1}
         }
     },
     {
-        "$group": {
-            "_id": None,
-            "average_kills_per_game": {"$avg": "$total_kills"}
+    "$addFields": {
+        "avgKDA": {
+            "$divide": [
+                {"$add": ["$avgKills", "$avgAssists"]},
+                {"$max": ["$avgDeaths", 1]}
+            ]
+        },
+            "player_name": "$player_name"
+        },
+    },
+    {
+        "$sort": {
+            "gamesPlayed": -1
         }
     }
 ]
 
-result = list(db.your_collection_name.aggregate(pipeline))
+result = list(collection.aggregate(pipeline))
 
-if result:
-    average_kills = result[0]["average_kills_per_game"]
-else:
-    average_kills = 0  # Player not found or no data available
+# Define CSV file and headers
+with open('player_stats.csv', 'w', newline='') as csvfile:
+    fieldnames = ['player_name', 'champion', 'position', 'avgKills', 'avgDeaths', 'avgAssists', 'avgKDA', 'gamesPlayed']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-print("Average Kills per Game for C9 Fudge:", average_kills)
+    writer.writeheader()
+
+    # Write data to CSV
+    for entry in result:
+        row_data = {
+            'player_name': entry['_id']['player'],
+            'champion': entry['_id']['champion'],
+            'position': entry['_id']['position'],
+            'avgKills': entry['avgKills'],
+            'avgDeaths': entry['avgDeaths'],
+            'avgAssists': entry['avgAssists'],
+            'avgKDA': entry['avgKDA'],
+            'gamesPlayed': entry['gamesPlayed']
+        }
+        writer.writerow(row_data)
