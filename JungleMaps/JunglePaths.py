@@ -22,7 +22,7 @@ def getImage(path, zoom=0.1):
     return OffsetImage(plt.imread(path), zoom=zoom)
 
 
-
+# TODO: This is a hardcoded team1 name
 team = "IZIDREAM"
 
 # r = requests.post('https://lolesports-api.bayesesports.com/v2/auth/login', json={"username": username, "password": password})
@@ -43,26 +43,27 @@ team = "IZIDREAM"
 
 gameIDs = []
 
-
 campsDict = {"blueCamp": "Blue", "dragon": "Dragon", "gromp": "Gromp", "krug": "Krugs", "raptor": "Raptors", "redCamp": "Red", "riftHerald": "Herald", "scuttleCrab": "Scuttle", "wolf": "Wolves"}
 
-data = {}
+data = {} # Store all gameData
 filePath = "objective_kills.json"
 with open(filePath) as json_data:
     data = json.load(json_data)
     for event in data:
-        if event["game_urn"] not in gameIDs: # For each game that has not been accounted for, create a new entry
-            gameIDs.append(event["game_urn"])
+        if event["game_urn"] not in gameIDs: # Collect unique GameIDs and append to gameIDs
+            gameIDs.append(event["game_urn"]) 
 
-
+# Debugging
 print(gameIDs)
 print(data)
 
 for gameID in gameIDs:
+
     gameData = []           # This contains filtered data by the gameID
     for item in data:
         if (item["game_urn"] == gameID):
             gameData.append(item)
+
     x = [[],[]]
     y = [[],[]]
     campsX = [[],[]]
@@ -74,14 +75,17 @@ for gameID in gameIDs:
     killsX = [[],[]]
     killsY = [[],[]]
     # print(json.dumps(game, indent = 4))
-    opponent = "OPPONENT" # game["teams"][0]["name"]  # TODO: Fix this and implement real opponent and replace "team" variable?
+
+    opponent = "OPPONENT" # game["teams"][0]["name"]  # TODO: Fix this and implement real opponent
     # if opponent == team:
     #   opponent = game["teams"][1]["name"]
+
     # r = requests.get('https://lolesports-api.bayesesports.com/v2/games/{}/download'.format(game["platformGameId"]), headers = {"Authorization": 'Bearer {}'.format(token["accessToken"])}, params = {"option": "HISTORIC_BAYES_DUMP"})
     # abc = r.json()
     # response = wget.download(r.json()["url"], "Data.zip")
     # with ZipFile("Data.zip", 'r') as zipObj:
     #     zipObj.extractall()
+
     junglerId = ""
     junglerChamp = ""
     clears = 0
