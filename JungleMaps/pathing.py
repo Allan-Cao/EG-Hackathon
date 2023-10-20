@@ -52,8 +52,8 @@ objective_events = pd.read_parquet("objective_kills.parquet")
 player_events = pd.read_parquet("snapshot_player_stats.parquet")
 game_summary = pd.read_parquet("game_summary.parquet")
 
-TEAM_TO_SCOUT = "GG"
-PLAYER_TO_SCOUT = "River"
+TEAM_TO_SCOUT = "C9"
+PLAYER_TO_SCOUT = "Blaber"
 
 AVAILABLE_GAMES = player_events[(player_events.team == TEAM_TO_SCOUT)].game_urn.unique()
 
@@ -71,6 +71,8 @@ objective_events_sorted = objective_events[
         )
     )
 ]
+
+roles = ["top", "jng", "mid", "bot", "sup"]
 
 for game_id in AVAILABLE_GAMES:
     player_event_data = player_events_sorted[(player_events_sorted.game_urn == game_id)]
@@ -93,6 +95,10 @@ for game_id in AVAILABLE_GAMES:
         if game_summary_data.team_1_name != TEAM_TO_SCOUT
         else game_summary_data.team_2_name
     )
+
+    team_1_champions = [game_summary_data[f"team_1_{role}"] for role in roles]
+    team_2_champions = [game_summary_data[f"team_2_{role}"] for role in roles]
+
     patch = ".".join(game_summary_data.game_version.split(".")[0:2])
     junglerChamp = champion_map[
         game_summary_data.team_1_jng if is_blue else game_summary_data.team_2_jng
@@ -169,14 +175,14 @@ for game_id in AVAILABLE_GAMES:
             x, y = taken_camp["camp_x"], taken_camp["camp_y"]
             position_data[clear_number].append((x, y))
 
-            text_x = -3750
+            text_x = -4500
             text_y = 9000 - (i * 1000)
 
             axes.text(
                 text_x,
                 text_y,
                 f"{taken_camp['minutes']}:{taken_camp['seconds']} {campsDict[taken_camp['camp_type']]}",
-                fontsize=10,
+                fontsize=14,
             )
 
             path = f"Icons/{taken_camp['camp_type']}.png"
@@ -196,9 +202,16 @@ for game_id in AVAILABLE_GAMES:
             )
 
     for clear_number in range(2):
-        fig, axes = plt.subplots(figsize=(9, 7))
+        fig, axes = plt.subplots(figsize=(12, 7))
         img = plt.imread("map11.png")
         setup_plot(axes, img)
+
+        plt.title(
+            f"{TEAM_TO_SCOUT} vs {enemy_team} - Clear {clear_number + 1}",
+            fontsize=14,
+            y=1.02,
+            loc="left",
+        )
 
         plt.plot(
             [coord[1] for coord in clear_pos_data[clear_number]],
@@ -215,12 +228,57 @@ for game_id in AVAILABLE_GAMES:
         newax = fig.add_axes([0.05, 0.68, 0.2, 0.2], anchor="NW", zorder=-1)
         newax.imshow(im)
         newax.axis("off")
-        plt.title(
-            f"{TEAM_TO_SCOUT} vs {enemy_team} - Clear {clear_number + 1}",
-            fontsize=14,
-            y=1.02,
-            loc="left",
-        )
+
+        # Constants for position and size
+        CHAMPION_IMG_SIZE = 0.1
+        INITIAL_VERTICAL_POSITION_C9 = 0.85
+        INITIAL_VERTICAL_POSITION_EG = 0.85
+        ALLIED_HOR_POS = 0.75
+        ENEMY_HOR_POS = 0.85
+        VS_TEXT_VERTICAL_POSITION = (
+            INITIAL_VERTICAL_POSITION_C9 + INITIAL_VERTICAL_POSITION_EG
+        ) / 2
+
+        # Load and position C9 champions
+        for idx, champ_name in enumerate(team_1_champions):
+            im = plt.imread(f"champion_images/{champion_map[champ_name]}.png")
+            newax = fig.add_axes(
+                [
+                    ALLIED_HOR_POS,
+                    INITIAL_VERTICAL_POSITION_C9 - idx * CHAMPION_IMG_SIZE,
+                    CHAMPION_IMG_SIZE,
+                    CHAMPION_IMG_SIZE,
+                ],
+                anchor="NW",
+                zorder=-1,
+            )
+            plt.text(
+                ALLIED_HOR_POS + 0.075,
+                INITIAL_VERTICAL_POSITION_C9 - idx * CHAMPION_IMG_SIZE + 0.05,
+                "vs",
+                fontsize=14,
+                ha="center",
+                va="center",
+                transform=plt.gcf().transFigure,
+            )
+            newax.imshow(im)
+            newax.axis("off")
+
+        # Load and position EG champions
+        for idx, champ_name in enumerate(team_2_champions):
+            im = plt.imread(f"champion_images/{champion_map[champ_name]}.png")
+            newax = fig.add_axes(
+                [
+                    ENEMY_HOR_POS,
+                    INITIAL_VERTICAL_POSITION_EG - idx * CHAMPION_IMG_SIZE,
+                    CHAMPION_IMG_SIZE,
+                    CHAMPION_IMG_SIZE,
+                ],
+                anchor="NW",
+                zorder=-1,
+            )
+            newax.imshow(im)
+            newax.axis("off")
 
         adjust_text(
             camp_data[clear_number],
