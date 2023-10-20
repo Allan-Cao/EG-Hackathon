@@ -3,6 +3,9 @@ from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
 import os
 import csv
+import requests as r
+champions = r.get('https://ddragon.leagueoflegends.com/cdn/13.20.1/data/en_US/champion.json').json()
+champion_map = {key: champions['data'][key]['name'] for key in champions['data'].keys()}
 
 # Initialize env variables
 load_dotenv()
@@ -70,7 +73,7 @@ with open('player_stats.csv', 'w', newline='') as csvfile:
     for entry in result:
         row_data = {
             'player_name': entry['_id']['player'],
-            'champion': entry['_id']['champion'],
+            'champion': champion_map[entry['_id']['champion']],
             'position': entry['_id']['position'],
             'avgKills': entry['avgKills'],
             'avgDeaths': entry['avgDeaths'],
